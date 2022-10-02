@@ -34,7 +34,7 @@ pub struct RadixHeapMap<K, V> {
     initial: Bucket<K, V>,
 }
 
-impl<K: Radix + Ord + Copy, V> RadixHeapMap<K, V> {
+impl<K: Radix + Ord + Copy + fmt::Debug, V> RadixHeapMap<K, V> {
     /// Create an empty `RadixHeapMap`
     pub fn new() -> RadixHeapMap<K, V> {
         RadixHeapMap {
@@ -126,7 +126,12 @@ impl<K: Radix + Ord + Copy, V> RadixHeapMap<K, V> {
     #[inline]
     pub fn push(&mut self, key: K, value: V) {
         let bucket = if let Some(top) = self.top {
-            assert!(key <= top, "Key must be lower or equal to current top key");
+            assert!(
+                key <= top,
+                "Key must be lower or equal to current top key. Key: {:?}, Top: {:?}",
+                key,
+                top
+            );
             &mut self.buckets[key.radix_distance(&top) as usize]
         } else {
             &mut self.initial
@@ -209,13 +214,13 @@ impl<K: Radix + Ord + Copy, V> RadixHeapMap<K, V> {
     }
 }
 
-impl<K: Radix + Ord + Copy, V> Default for RadixHeapMap<K, V> {
+impl<K: Radix + Ord + Copy + fmt::Debug, V> Default for RadixHeapMap<K, V> {
     fn default() -> RadixHeapMap<K, V> {
         RadixHeapMap::new()
     }
 }
 
-impl<K: Radix + Ord + Copy, V> FromIterator<(K, V)> for RadixHeapMap<K, V> {
+impl<K: Radix + Ord + Copy + fmt::Debug, V> FromIterator<(K, V)> for RadixHeapMap<K, V> {
     fn from_iter<I>(iter: I) -> RadixHeapMap<K, V>
     where
         I: IntoIterator<Item = (K, V)>,
@@ -230,7 +235,7 @@ impl<K: Radix + Ord + Copy, V> FromIterator<(K, V)> for RadixHeapMap<K, V> {
     }
 }
 
-impl<K: Radix + Ord + Copy, V> Extend<(K, V)> for RadixHeapMap<K, V> {
+impl<K: Radix + Ord + Copy + fmt::Debug, V> Extend<(K, V)> for RadixHeapMap<K, V> {
     fn extend<I>(&mut self, iter: I)
     where
         I: IntoIterator<Item = (K, V)>,
@@ -241,7 +246,9 @@ impl<K: Radix + Ord + Copy, V> Extend<(K, V)> for RadixHeapMap<K, V> {
     }
 }
 
-impl<'a, K: Radix + Ord + Copy + 'a, V: Copy + 'a> Extend<&'a (K, V)> for RadixHeapMap<K, V> {
+impl<'a, K: Radix + Ord + Copy + fmt::Debug + 'a, V: Copy + 'a> Extend<&'a (K, V)>
+    for RadixHeapMap<K, V>
+{
     fn extend<I>(&mut self, iter: I)
     where
         I: IntoIterator<Item = &'a (K, V)>,
@@ -403,7 +410,7 @@ impl<K: Radix + Ord + Copy, V> IntoIterator for RadixHeapMap<K, V> {
     }
 }
 
-impl<'a, K: Radix + Ord + Copy, V> IntoIterator for &'a RadixHeapMap<K, V> {
+impl<'a, K: Radix + Ord + Copy + fmt::Debug, V> IntoIterator for &'a RadixHeapMap<K, V> {
     type Item = &'a (K, V);
     type IntoIter = Iter<'a, K, V>;
 
@@ -642,6 +649,7 @@ mod tests {
     use super::Radix;
     use super::RadixHeapMap;
     use std::cmp::Reverse;
+    use std::fmt;
 
     #[test]
     fn radix_dist() {
@@ -711,7 +719,7 @@ mod tests {
 
     #[test]
     fn sort() {
-        fn prop<T: Ord + Radix + Copy>(mut xs: Vec<T>) -> bool {
+        fn prop<T: Ord + Radix + Copy + fmt::Debug>(mut xs: Vec<T>) -> bool {
             let mut heap: RadixHeapMap<_, _> =
                 xs.iter().enumerate().map(|(i, &d)| (d, i)).collect();
 
@@ -768,7 +776,7 @@ mod tests {
 
     #[test]
     fn iter_yeilds_all_elements() {
-        fn prop<T: Ord + Radix + Copy>(mut xs: Vec<T>) -> TestResult {
+        fn prop<T: Ord + Radix + Copy + fmt::Debug>(mut xs: Vec<T>) -> TestResult {
             let heap = xs.iter().map(|&d| (d, ())).collect::<RadixHeapMap<_, _>>();
 
             // Check that the iterator yields all elements inside the heap
